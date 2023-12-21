@@ -1,0 +1,126 @@
+% NOTE: run this, maximize figure 1 in big monitor, then 
+%>clf; MapObs_withVH
+
+data_dir='../../DATA_DRIVE/GM2020_InSAR_FMCW/LIDAR/'
+[D6,R6]=readgeoraster([data_dir 'GrandMesa1Feb_VH.tif']);
+r.x=linspace(R6.XWorldLimits(1),R6.XWorldLimits(2),R6.RasterSize(2));
+r.y=linspace(R6.YWorldLimits(2),R6.YWorldLimits(1),R6.RasterSize(1));
+r.Z=D6;
+%% now resize
+D7=imresize(D6,0.2);
+r2.x=downsample(r.x,20);
+r2.y=downsample(r.y,20);
+r2.Z=D7;
+
+%% now plot
+FigH=figure(3);clf;
+%FigH.WindowStyle='docked'
+%FigH.WindowState='maximized';
+ax1 = axes
+%h=imagesc(ax1,r2.x,r2.y,r2.Z)
+plotZdata2(ax1,r2,[0 10]); hold on
+
+% %% now plot pit sites
+% M3=readmatrix('../../DATA_DRIVE/GM2020_InSAR_FMCW/InSitu/PitSummary.csv');
+% figure(1);hold on
+% scatter(M3(:,3),M3(:,4),500,'wp','filled')
+% h=scatter(M3(:,3),M3(:,4),500,'kp')
+% set(h,'linewidth',2)
+
+%% now plot met stations
+AWSlat=[39.05084, 39.03388, 39.0573807]
+AWSlon=[-108.06144, -108.21399, -108.05756]
+AWSstring={'GMSP','Mesa West'}
+[AWSx,AWSy,ZONE]=ll2utm(AWSlat,AWSlon)
+scatter(ax1,AWSx,AWSy,600,'md','filled')
+h2=scatter(ax1,AWSx,AWSy,600,'wd')
+set(h2,'linewidth',2)
+
+% show location of GML
+scatter(ax1,7.594e5,4.3254e6,800,'pr','filled')
+
+% %% now plot location of reflectors as deployed in 2019
+% D=load('Reflectors2019.txt');
+% h=scatter(D(:,5),D(:,6),50,'rv','filled')
+
+%% now get locations of reflectors after repair and measured in 2023
+D2=xlsread('GrandMesa2023-R.xlsx');
+[R2x,R2y,ZONE]=ll2utm(D2(:,1),D2(:,2));
+h=scatter(ax1,R2x,R2y,50,'r^','filled')
+
+Survey1=readtable('PitsFedSamplers.xlsx','Sheet','Survey1-pits');
+Survey2pits=readtable('PitsFedSamplers.xlsx','Sheet','Survey2-pits');
+Survey2Fs=readtable('PitsFedSamplers.xlsx','Sheet','Survey2-Fs');
+D5=Survey2Fs;
+D5b=Survey2pits;
+for n=1:length(D5b.SWE2)
+    SWE2(n,1)=str2num(D5b.SWE2{n});
+    SWE2(n,2)=D5.FsSWE2(n);
+end
+
+SWE2all=nanmean(SWE2,2)
+dSWE=SWE2all-Survey1.SWE1;
+
+ax2 = axes; hold on
+load DepthsAll
+h=scatter(ax2,S1E,S1N,150,S1depths,'o','filled')
+%h=scatter(ax2,S1E,S1N,200,S1depths,'ko')
+
+set(h,'LineWidth',3)
+axis equal
+set(gca,'Clim',[min(S1depths) max(S1depths)])
+
+linkaxes([ax1, ax2]);
+axis([7.38e5 7.6e5 4.32e6 4.33e6])
+% Hide the top axes 
+ax2.Visible = 'off'; 
+ax2.XTick = []; 
+ax2.YTick = [];
+colormap(ax1, 'gray') 
+colormap(ax2, 'turbo') 
+set([ax1,ax2],'Position', [.01 .11 1 0.815]);
+cb1 = colorbar(ax1,'Position', [.05 .11 .0675 .815]); 
+cb2 = colorbar(ax2,'Position', [.88 .11 .0675 .815],'LineWidth',2,'FontSize',14,'FontWeight','bold');
+
+axes(ax1)
+xlabel('Zone 12 UTM Easting [m]')
+ylabel('Zone 12 UTM Northing [m]')
+title('SURVEY #1: Lidar vegetation height (gray) [m] and snow depth (color) [cm]')
+axes(ax2)
+axis([7.48e5 7.56e5 4.32e6 4.3275e6])
+%set(gcf,'renderer','zbuffer');
+%print('-dpng','-r80','out.png');
+
+% set(gcf,'PaperUnits','inches');
+% set(gcf,'PaperSize', [16 8]);
+% set(gcf,'PaperPosition',[0 0 16 8]);
+% set(gcf,'PaperPositionMode','Manual');
+% saveas(gcf,'MyFig.png')
+
+%% now lets compare with the high-res data
+% figure(3);clf
+% xlim=[756850 760000];
+% ylim=[4324050 4326250];
+% Ix=find(r.x>xlim(1) & r.x<xlim(2));
+% Iy=find(r.y>ylim(1) & r.y<ylim(2));
+% r3.x=r.x(Ix); r3.y=r.y(Iy); r3.Z=r.Z(Iy,Ix);
+% plotZdata(r3,[0 2]); hold on
+% 
+% %%
+% figure(2);clf; 
+% for n=1:6
+%     subplot(2,3,n)
+%     plotZdata(r3,[0 2]); hold on
+%     h=scatter(D(:,5),D(:,6),200,'rv','filled')
+%     h=scatter(R2x,R2y,200,'k^','filled')
+%     axis([R2x(n)-3 R2x(n)+3 R2y(n)-3 R2y(n)+3])
+% end
+
+
+
+
+
+
+
+
+
